@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Departamento De Promocion Espiritual</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        /* --- Estilos Generales --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { color: #2d3748; margin-bottom: 10px; }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 850px;
+            margin-bottom: 30px;
+            border-top: 5px solid #001f3f; 
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #28a745;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-save { 
+            background-color: #003366; 
+            width: 100%; 
+            margin-top: 10px; 
+            border-top: 5px solid #003366;
+        }
+        .btn-save:hover { 
+            background-color: #002244; 
+            transform: translateY(-1px); 
+        }
+
+        .btn-export { background-color: #3182ce; }
+        .btn-export:hover { background-color: #2b6cb0; }
+
+        .btn-delete { background-color: #e53e3e; }
+        .btn-delete:hover { background-color: #c53030; }
+
+        .btn-edit, .btn-row-delete {
+            background-color: #f6ad55; 
+            color: #2d3748;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: none;
+            margin: 2px;
+        }
+        .btn-edit:hover { background-color: #dd6b20; color: white; }
+        .btn-row-delete { background-color: #e53e3e; color: white; }
+        .btn-row-delete:hover { background-color: #c53030; }
+
+        .table-section {
+            width: 100%;
+            max-width: 850px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 5px solid #001f3f; 
+        }
+
+        .table-title {
+            text-align: center;
+            color: #2d3748;
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 24px;
+            padding-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .table-subtitle {
+            text-align: center;
+            color: #4a5568;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 18px;
+            font-weight: 400;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 15px;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 20px; 
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #4a5568;
+            color: white;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        #tablaRegistros tr:nth-child(odd) { background-color: #D3E7F8; }
+        #tablaRegistros th:last-child, #tablaRegistros td:last-child { text-align: center; width: 80px; }
+
+        .empty-msg {
+            text-align: center;
+            color: #a0aec0;
+            margin-top: 30px;
+            font-style: italic;
+        }
+
+        .print-note-container {
+            width: 100%;
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            background-color: #f7fafc;
+        }
+
+        #notaParaImprimir {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            border: 1px solid #a0aec0;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        #printNoteTable { display: none; }
+
+        @media print {
+            body > *:not(.table-section) { display: none !important; }
+            .table-section {
+                display: block !important; 
+                box-shadow: none; 
+                padding: 0;
+                margin: 0;
+                background-color: transparent;
+                max-width: 100%;
+                width: 100%;
+            }
+            .table-title { margin-bottom: 2px !important; font-size: 20pt !important; }
+            .table-subtitle { margin-bottom: 15px !important; padding-bottom: 5px !important; font-size: 14pt !important; }
+            .actions-bar, .print-note-container, #emptyMsg { display: none !important; }
+            #tablaRegistros th:last-child, #tablaRegistros td:last-child { display: none !important; }
+            th { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color: white !important; }
+            #tablaRegistros th { font-size: 10pt !important; padding: 6px 10px !important; border: 1px solid #e2e8f0 !important; }
+            #tablaRegistros td { font-size: 12pt !important; border: 1px solid #e2e8f0 !important; padding: 8px 10px !important; }
+            #tablaRegistros tr:nth-child(odd) { background-color: #D3E7F8 !important; -webkit-print-color-adjust: exact !important; }
+            #printNoteTable { display: table !important; margin-top: 10px !important; border: 1px solid #e2e8f0; width: 100%; }
+            #printNoteTable th { font-size: 12pt !important; background-color: #4a5568 !important; padding: 5px 10px !important; }
+            #printNoteTable td { padding: 10px !important; white-space: pre-wrap; font-size: 12pt !important; border: 1px solid #e2e8f0 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Depto. de Promocion Espiritual</h1>
+
+    <div class="container">
+        <form id="registroForm">
+            <input type="hidden" id="editKey">
+
+            <div class="form-group">
+                <label for="fecha">📅 Fecha:</label>
+                <input type="date" id="fecha" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="principio">✨ Principio:</label>
+                <input type="text" id="principio" placeholder="Ej. Responsabilidad:Himnos" required>
+            </div>
+
+            <div class="form-group">
+                <label for="direccion">🧭Dirección:</label>
+                <input type="text" id="direccion" placeholder="Ej. Responsabilidad:Coros" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="mensaje"> 📖 Mensaje:</label>
+                <textarea id="mensaje" rows="3" placeholder="Mensaje..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-save" id="saveButton">💾 Guardar Registro</button>
+        </form>
+    </div>
+
+    <div class="table-section">
+        <h2 class="table-title">Departamento de Promocion Espiritual<br>🏤"Iglesia Kedusha-Adonai"🕎</h2>
+        <h3 id="monthSubtitle" class="table-subtitle"></h3>
+
+        <div class="actions-bar">
+            <button onclick="exportarExcel()" class="btn-export">📊 Exportar Excel</button>
+            <button onclick="borrarTodo()" class="btn-delete">🗑️ Borrar Todo</button>
+            <button onclick="window.print()" class="btn-export">🖨️ Imprimir</button>
+        </div>
+
+        <table id="tablaRegistros">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Principio</th>
+                    <th>Dirección</th>
+                    <th>Mensaje</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p id="emptyMsg" class="empty-msg">No hay registros guardados actualmente.</p>
+
+        <div class="print-note-container">
+            <label for="notaParaImprimir">Notas Finales o Comentarios:</label>
+            <textarea id="notaParaImprimir" rows="4" placeholder="Observaciones..."></textarea>
+        </div>
+        
+        <table id="printNoteTable">
+            <thead><tr><th colspan="1">TEXTO</th></tr></thead>
+            <tbody><tr><td id="noteCell"></td></tr></tbody>
+        </table>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN FIREBASE ---
+        const firebaseConfig = {
+            databaseURL: "https://TU-PROYECTO.firebaseio.com/" // REEMPLAZA CON TU URL
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const refRegistros = db.ref('promocion_espiritual/registros');
+        const refNotas = db.ref('promocion_espiritual/nota_final');
+
+        // Referencias DOM
+        const form = document.getElementById('registroForm');
+        const tableBody = document.querySelector('#tablaRegistros tbody');
+        const emptyMsg = document.getElementById('emptyMsg');
+        const notaField = document.getElementById('notaParaImprimir'); 
+        const noteCell = document.getElementById('noteCell'); 
+        const editKeyField = document.getElementById('editKey'); 
+        const saveButton = document.getElementById('saveButton');
+
+        // --- CARGA INICIAL ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setMonthSubtitle();
+            
+            // Cargar Registros en Tiempo Real
+            refRegistros.on('value', (snapshot) => {
+                const data = snapshot.val();
+                renderTable(data);
+            });
+
+            // Cargar Nota Final
+            refNotas.on('value', (snapshot) => {
+                const nota = snapshot.val();
+                notaField.value = nota || "";
+                noteCell.textContent = nota || "No se ingresaron notas finales.";
+            });
+        });
+
+        function renderTable(data) {
+            tableBody.innerHTML = '';
+            if (!data) {
+                emptyMsg.style.display = 'block';
+                return;
+            }
+            emptyMsg.style.display = 'none';
+            Object.keys(data).forEach((key) => {
+                const reg = data[key];
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${reg.fecha}</td>
+                    <td>${reg.principio}</td>
+                    <td>${reg.direccion}</td>
+                    <td>${reg.mensaje}</td>
+                    <td>
+                        <button class="btn-edit" onclick="cargarEdicion('${key}')">-Editar-</button>
+                        <button class="btn-row-delete" onclick="eliminarRegistro('${key}')">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // --- ACCIONES ---
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const reg = {
+                fecha: document.getElementById('fecha').value,
+                principio: document.getElementById('principio').value,
+                direccion: document.getElementById('direccion').value,
+                mensaje: document.getElementById('mensaje').value
+            };
+
+            if (editKeyField.value) {
+                refRegistros.child(editKeyField.value).update(reg);
+                editKeyField.value = "";
+                saveButton.textContent = '💾 Guardar Registro';
+            } else {
+                refRegistros.push(reg);
+            }
+            form.reset();
+        });
+
+        function cargarEdicion(key) {
+            refRegistros.child(key).once('value', (snapshot) => {
+                const reg = snapshot.val();
+                document.getElementById('fecha').value = reg.fecha;
+                document.getElementById('principio').value = reg.principio;
+                document.getElementById('direccion').value = reg.direccion;
+                document.getElementById('mensaje').value = reg.mensaje;
+                editKeyField.value = key;
+                saveButton.textContent = '✏️ Actualizar Registro';
+                window.scrollTo(0, 0);
+            });
+        }
+
+        function eliminarRegistro(key) {
+            if (confirm("¿Eliminar este registro?")) {
+                refRegistros.child(key).remove();
+            }
+        }
+
+        function borrarTodo() {
+            if (confirm("¿Borrar TODO el sistema?")) {
+                refRegistros.remove();
+                refNotas.remove();
+            }
+        }
+
+        notaField.addEventListener('input', () => {
+            refNotas.set(notaField.value);
+        });
+
+        function setMonthSubtitle() {
+            const now = new Date();
+            const options = { month: 'long', year: 'numeric' };
+            const formattedDate = now.toLocaleDateString('es-ES', options);
+            document.getElementById('monthSubtitle').textContent = `Mes de ${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}`;
+        }
+
+        function exportarExcel() {
+            refRegistros.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if(!data) return alert("No hay datos.");
+                let csv = "data:text/csv;charset=utf-8,\uFEFF";
+                csv += "Fecha,Principio,Direccion,Mensaje\n";
+                Object.values(data).forEach(r => {
+                    csv += `"${r.fecha}","${r.principio}","${r.direccion}","${r.mensaje}"\n`;
+                });
+                const link = document.createElement("a");
+                link.href = encodeURI(csv);
+                link.download = "Registro_Promocion_Espiritual.csv";
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
